@@ -1,45 +1,58 @@
-version: '3.8'
-
+version: '3'
 services:
 
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    ports:
-      - "8080:80"
-    volumes:
-      - ./src:/var/www
-      - ./nginx/conf.d/:/etc/nginx/conf.d/
-    depends_on:
-      - app
-      - db
+    app:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        image: php:8.1
+        container_name: app
+        restart: unless-stopped
+        tty: true
+        environment:
+            SERVICE_NAME: app
+            SERVICE_TAGS: dev
+        working_dir: /var/www
+        networks:
+            - app-network
+        ports:
+            - "9000:9000"
 
-  db:
-    image : mysql
-    container_name : mysql
-    volumes:
-     - ./mysql/data:/var/lib/mysql
-    ports:
-     - "3307:3306"
-    environment:
-     MYSQL_DATABASE: posts
-     MYSQL_ROOT_PASSWORD: root
+    nginx:
+        image: nginx:alpine
+        container_name: nginx
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "8080:80"
+        volumes:
+            - ./:/var/www
+            - ./nginx:/etc/nginx/conf.d
+        networks:
+            - app-network
+        depends_on:
+            - app
+            - db
 
-  app:
-    container_name: posts
-    build:
-      context: ./php
-      dockerfile: Dockerfile
-    volumes:
-      - ./src:/var/www
-    ports:
-      - "9000:9000"
-    working_dir: /var/www
+    db:
+       image : mysql
+       container_name : mysql
+       volumes:
+         - ./mysql/data:/var/lib/mysql
+       ports:
+         - "3307:3306"
+       environment:
+         MYSQL_DATABASE: posts
+         MYSQL_ROOT_PASSWORD: root
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    ports:
-     - "3400:80"
-    depends_on:
-     - db
+    phpmyadmin:
+       image: phpmyadmin/phpmyadmin
+       container_name: phpmyadmin
+       ports:
+         - "3400:80"
+       depends_on:
+         - db
+
+networks:
+    app-network:
+        driver: bridge
