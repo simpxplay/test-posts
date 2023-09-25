@@ -6,6 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StorePostRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return (bool)auth()->user();
+    }
+
     public function rules(): array
     {
         return [
